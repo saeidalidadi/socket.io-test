@@ -19,11 +19,14 @@
     <form action="">
       <input id="m" autocomplete="off" /><button>Send</button>
     </form>
-    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
       $(function () {
-        var socket = io();
+        var socket = io({
+          url: 'ws://:3001',
+          transports: ["websocket"]
+        });
         $('form').submit(function(){
           socket.emit('chat message', $('#m').val());
           $('#m').val('');
@@ -33,6 +36,20 @@
           $('#messages').append($('<li>').text(msg));
           window.scrollTo(0, document.body.scrollHeight);
         });
+        socket.on("connect", function(event) {
+          console.log('Connected:=>', event);
+        });
+
+        socket.on('reconnect', function(attemts) {
+          console.log('Reconnected:=>', attemts)
+        });
+        socket.on('disconnect', function(reason) {
+          console.log('You are disconnected:=>' + reason);
+        })
+        setTimeout(function () {
+          //socket.disconnect();
+          //socket.connect();
+        }, 5000)
       });
     </script>
   </body>
