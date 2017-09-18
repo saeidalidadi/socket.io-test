@@ -23,14 +23,29 @@
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
       $(function () {
-        var socket = io({
-          url: 'ws://:3001',
-          transports: ["websocket"]
+        var id, socket;
+        var createSocket = function() {
+          return io({
+            url: 'ws://:',
+            transports: ["websocket"],
+            query: 'id=' + id
+          });
+        };
+        socket = createSocket();
+        socket.on('reconnect_attempt', function() {
+          console.log('reconnect attempt...');
+          socket.io.opts.query = {
+            id: id
+          }
         });
         $('form').submit(function(){
           socket.emit('chat message', $('#m').val());
           $('#m').val('');
           return false;
+        });
+        socket.on('yourID', function(newID) {
+          console.log('Your Id:', newID)
+          id = newID;
         });
         socket.on('chat message', function(msg){
           $('#messages').append($('<li>').text(msg));
@@ -44,12 +59,17 @@
           console.log('Reconnected:=>', attemts)
         });
         socket.on('disconnect', function(reason) {
-          console.log('You are disconnected:=>' + reason);
+          console.log('You are disconnected as id:=>' + id);
         })
         setTimeout(function () {
           //socket.disconnect();
-          //socket.connect();
-        }, 5000)
+          setTimeout(function() {
+            //socket = createSocket()
+            setTimeout(function () {
+              //socket.disconnect();
+            }, 2000)
+          }, 3000);
+        }, 2000)
       });
     </script>
   </body>
