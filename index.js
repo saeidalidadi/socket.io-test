@@ -1,7 +1,34 @@
 var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var http = require('http');
+
+var io = require('socket.io')();
+const httpProxy = require('http-proxy');
+
 var port = process.env.PORT || 3000;
+
+
+//
+// Setup our server to proxy standard HTTP requests
+//
+var proxy = new httpProxy.createProxyServer({
+	target: {
+		host: 'localhost',
+		port: port
+	}
+});
+var proxyServer = http.createServer(function (req, res) {
+	proxy.web(req, res);
+});
+
+//
+// Listen to the `upgrade` event and proxy the
+// WebSocket requests as well.
+//
+proxyServer.on('upgrade', function (req, socket, head) {
+	proxy.ws(req, socket, head);
+});
+
+proxyServer.listen(80);
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -37,6 +64,8 @@ io.on('connection', function(socket) {
 
 });
 
-http.listen(port, function(){
+const server = app.listen(port, function(){
   console.log('listening on *:' + port);
 });
+
+io.attach(server);
